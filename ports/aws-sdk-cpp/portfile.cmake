@@ -9,6 +9,7 @@ vcpkg_from_github(
         fix-openssl3.patch
 		TRICE.fix-curl-redirect.patch
 		TRICE.patch-string.patch
+        TRICE.fix-msvc-deprecations.patch
 )
 
 string(COMPARE EQUAL "${VCPKG_CRT_LINKAGE}" "dynamic" FORCE_SHARED_CRT)

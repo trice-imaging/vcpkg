@@ -1,0 +1,13 @@
+diff --git a/cmake/compiler_settings.cmake b/cmake/compiler_settings.cmake
+index cae5b92248..e820025991 100644
+--- a/cmake/compiler_settings.cmake
++++ b/cmake/compiler_settings.cmake
+@@ -159,5 +159,8 @@ macro(set_msvc_warnings)
+         else()
+             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+         endif()
++
++        # Avoid msvc deprecation warning that breaks build until we upgrade aws-sdk-cpp
++        add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
+     endif(MSVC)
+ endmacro()
