@@ -7,7 +7,7 @@ vcpkg_from_github(
     PATCHES
         dcmtk.patch
         windows-patch.patch
-        TRICE.ios.patch
+        fix-pc-format.patch
 )
 
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
@@ -32,9 +32,10 @@ vcpkg_cmake_configure(
         -DDCMTK_ENABLE_PRIVATE_TAGS=ON
         -DCMAKE_CXX_STANDARD=17
 		-DDCMTK_DEFAULT_DICT=builtin	# TRICE enable builtin dictionary
-		-DDCMTK_WIDE_CHAR_FILE_IO_FUNCTIONS=ON
+        -DDCMTK_WIDE_CHAR_FILE_IO_FUNCTIONS=ON
         -DDCMTK_WIDE_CHAR_MAIN_FUNCTION=ON
         -DDCMTK_ENABLE_STL=ON
+        -DCMAKE_DEBUG_POSTFIX=d
     OPTIONS_DEBUG
         -DINSTALL_HEADERS=OFF
         -DINSTALL_OTHER=OFF
@@ -132,8 +133,9 @@ vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/include/dcmtk/config/osconfig.h" "
 vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/include/dcmtk/config/osconfig.h" "#define DCM_DICT_DEFAULT_PATH \"${CURRENT_PACKAGES_DIR}/share/dcmtk/dicom.dic:${CURRENT_PACKAGES_DIR}/share/dcmtk/private.dic\"" "")
 vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/include/dcmtk/config/osconfig.h" "#define DEFAULT_CONFIGURATION_DIR \"${CURRENT_PACKAGES_DIR}/etc/dcmtk/\"" "")
 vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/include/dcmtk/config/osconfig.h" "#define DEFAULT_SUPPORT_DATA_DIR \"${CURRENT_PACKAGES_DIR}/share/dcmtk/\"" "")
-vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/include/dcmtk/config/osconfig.h" "#define DEFAULT_SUPPORT_DATA_DIR \"${CURRENT_PACKAGES_DIR}/share/dcmtk/\"" "")
 
 vcpkg_fixup_pkgconfig()
 
-file(INSTALL "${SOURCE_PATH}/COPYRIGHT" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)
+vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYRIGHT")
+
+file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
