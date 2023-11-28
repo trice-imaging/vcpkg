@@ -33,6 +33,7 @@ vcpkg_cmake_configure(
         -DCMAKE_CXX_STANDARD=17
 		-DDCMTK_DEFAULT_DICT=builtin	# TRICE enable builtin dictionary
         -DDCMTK_WIDE_CHAR_FILE_IO_FUNCTIONS=ON
+        -DDCMTK_WITH_OPENJPEG=OFF
         -DDCMTK_WIDE_CHAR_MAIN_FUNCTION=ON
         -DDCMTK_ENABLE_STL=ON
         -DCMAKE_DEBUG_POSTFIX=d
