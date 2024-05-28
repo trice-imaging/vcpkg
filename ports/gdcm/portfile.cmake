@@ -36,6 +36,7 @@ vcpkg_cmake_configure(
         -DGDCM_USE_SYSTEM_ZLIB=ON
         -DGDCM_USE_SYSTEM_OPENJPEG=ON
         -DGDCM_BUILD_TESTING=OFF
+        -DGDCM_BUILD_APPLICATIONS=ON
         -DUSE_VCPKG_GETOPT=${USE_VCPKG_GETOPT}
     MAYBE_UNUSED_VARIABLES
         USE_VCPKG_GETOPT
@@ -63,6 +64,8 @@ vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/include/gdcmConfigure.h" "#define 
 
 vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/share/gdcm/GDCMConfig.cmake" "set( GDCM_INCLUDE_DIRS \"${SOURCE_PATH}/Source/Common;${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel/Source/Common;${SOURCE_PATH}/Source/DataStructureAndEncodingDefinition;${SOURCE_PATH}/Source/MediaStorageAndFileFormat;${SOURCE_PATH}/Source/MessageExchangeDefinition;${SOURCE_PATH}/Source/DataDictionary;${SOURCE_PATH}/Source/InformationObjectDefinition\")" "")
 vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/share/gdcm/GDCMConfig.cmake" "set(GDCM_LIBRARY_DIRS \"${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel/bin/.\")" "")
+
+vcpkg_copy_tools(TOOL_NAMES gdcmconv AUTO_CLEAN)
 
 if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
     file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/bin" "${CURRENT_PACKAGES_DIR}/debug/bin")
