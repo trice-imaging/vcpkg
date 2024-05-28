@@ -1,0 +1,140 @@
+diff --git a/include/sockpp/connector.h b/include/sockpp/connector.h
+index b30fa5a..07d2ce4 100644
+--- a/include/sockpp/connector.h
++++ b/include/sockpp/connector.h
+@@ -134,6 +134,15 @@ public:
+ 	 */
+ 	bool connect(const sock_address& addr);
+ 	/**
++	 * The start of a non blocking connect call, establishes the initial
++	 * connection and will not close it on error, sets non blocking to true
++	 * up to caller to manage the api in non blocking form.
++	 * @param addr The remote server address.
++	 * @return @em if false and last error is EWOULDBLOCK, continue to retry with
++	 * a select
++	 */
++	bool connect_nb_begin(const sock_address& addr);
++	/**
+      * Attempts to connect to the specified server, with a timeout.
+      * If the socket is currently connected, this will close the current
+      * connection and open the new one.
+@@ -244,6 +253,7 @@ public:
+ 	 * @return @em true on success, @em false on error
+ 	 */
+ 	bool connect(const addr_t& addr) { return base::connect(addr); }
++	bool connect_nb_begin(const addr_t& addr) { return base::connect_nb_begin(addr); }
+ 	/**
+      * Attempts to connect to the specified server, with a timeout.
+      * If the socket is currently connected, this will close the current
+diff --git a/include/sockpp/inet_address.h b/include/sockpp/inet_address.h
+index 602f665..ce56809 100644
+--- a/include/sockpp/inet_address.h
++++ b/include/sockpp/inet_address.h
+@@ -52,6 +52,7 @@
+ #include <string>
+ #include <cstring>
+ #include <algorithm>
++#include <vector>
+ 
+ namespace sockpp {
+ 
+@@ -143,6 +144,13 @@ public:
+      * @throw sys_error, getaddrinfo_error
+ 	 */
+ 	static in_addr_t resolve_name(const std::string& saddr);
++	/**
++	 * Attempts to resolve the host name into one or more 32-bit internet addresses.
++	 * @param saddr The string host name.
++	 * @return The internet address in network byte order.
++     * @throw sys_error, getaddrinfo_error
++	 */
++	static std::vector<in_addr_t> resolve_names(const std::string& saddr);
+ 	/**
+ 	 * Creates the socket address using the specified host address and port
+ 	 * number.
+diff --git a/include/sockpp/socket.h b/include/sockpp/socket.h
+index 944cd97..3f29efb 100644
+--- a/include/sockpp/socket.h
++++ b/include/sockpp/socket.h
+@@ -120,9 +120,11 @@ inline std::chrono::system_clock::time_point to_timepoint(const timeval& tv)
+  */
+ class socket_initializer
+ {
++public:
+ 	/** Initializes the sockpp library */
+ 	socket_initializer();
+ 
++private:
+ 	socket_initializer(const socket_initializer&) =delete;
+ 	socket_initializer& operator=(const socket_initializer&) =delete;
+ 
+diff --git a/src/connector.cpp b/src/connector.cpp
+index 07bc37a..4c38f95 100644
+--- a/src/connector.cpp
++++ b/src/connector.cpp
+@@ -81,6 +81,22 @@ bool connector::connect(const sock_address& addr)
+ 
+ /////////////////////////////////////////////////////////////////////////////
+ 
++bool connector::connect_nb_begin(const sock_address& addr)
++{
++	if (!recreate(addr))
++		return false;
++
++	if (!set_non_blocking(true))
++		return close_on_err();
++
++	if (!check_ret_bool(::connect(handle(), addr.sockaddr_ptr(), addr.size())))
++		return false;
++
++	return true;
++}
++
++/////////////////////////////////////////////////////////////////////////////
++
+ bool connector::connect(const sock_address& addr, std::chrono::microseconds timeout)
+ {
+ 	if (timeout.count() <= 0)
+diff --git a/src/inet_address.cpp b/src/inet_address.cpp
+index 6e04103..160d4dc 100644
+--- a/src/inet_address.cpp
++++ b/src/inet_address.cpp
+@@ -52,11 +52,19 @@ bool inet_address::is_set() const
+ // --------------------------------------------------------------------------
+ 
+ in_addr_t inet_address::resolve_name(const std::string& saddr)
++{
++	auto names = resolve_names(saddr);
++	return names.at(0);
++}
++
++// --------------------------------------------------------------------------
++
++std::vector<in_addr_t> inet_address::resolve_names(const std::string& saddr)
+ {
+ 	#if !defined(_WIN32)
+ 		in_addr ia;
+ 		if (::inet_pton(ADDRESS_FAMILY, saddr.c_str(), &ia) == 1)
+-			return ia.s_addr;
++			return { ia.s_addr };
+ 	#endif
+ 
+     addrinfo *res, hints = addrinfo{};
+@@ -73,10 +81,14 @@ in_addr_t inet_address::resolve_name(const std::string& saddr)
+     if (gai_err != 0)
+         throw getaddrinfo_error(gai_err, saddr);
+ 
+-    auto ipv4 = reinterpret_cast<sockaddr_in*>(res->ai_addr);
+-    auto addr = ipv4->sin_addr.s_addr;
++	std::vector<in_addr_t> addresses;
++	for (auto rp = res; rp != NULL; rp = rp->ai_next) {
++		auto ipv4 = reinterpret_cast<struct sockaddr_in *>(rp->ai_addr);
++		auto addr = ipv4->sin_addr.s_addr;
++		addresses.push_back(addr);
++	}
+     freeaddrinfo(res);
+-    return addr;
++    return addresses;
+ }
+ 
+ // --------------------------------------------------------------------------
