@@ -1,5 +1,38 @@
+diff --git a/Applications/Cxx/CMakeLists.txt b/Applications/Cxx/CMakeLists.txt
+index e18ec85ef..fdd879097 100644
+--- a/Applications/Cxx/CMakeLists.txt
++++ b/Applications/Cxx/CMakeLists.txt
+@@ -7,9 +7,11 @@
+ 
+ 
+ if(WIN32 AND NOT CYGWIN AND NOT MINGW)
+-  include_directories(
+-    "${GDCM_SOURCE_DIR}/Utilities/getopt"
+-  )
++  if(NOT USE_VCPKG_GETOPT)
++    include_directories(
++      "${GDCM_SOURCE_DIR}/Utilities/getopt"
++    )
++  endif()
+ endif()
+ 
+ # Add the include paths
+@@ -199,7 +201,12 @@ foreach(exename ${GDCM_EXECUTABLE_NAME})
+     set_target_properties(${exename} PROPERTIES ${GDCM_EXECUTABLE_PROPERTIES})
+   endif()
+   if(WIN32 AND NOT CYGWIN AND NOT MINGW)
+-    target_link_libraries(${exename} gdcmgetopt)
++    if(USE_VCPKG_GETOPT)
++      find_package(unofficial-getopt-win32 REQUIRED)
++      target_link_libraries(${exename} unofficial::getopt-win32::getopt)
++    else()
++      target_link_libraries(${exename} gdcmgetopt)
++    endif()
+   endif()
+   if(NOT GDCM_INSTALL_NO_RUNTIME)
+     install(TARGETS ${exename}
 diff --git a/Utilities/CMakeLists.txt b/Utilities/CMakeLists.txt
-index 4cdc999..c6ede41 100644
+index 4cdc9993a..c6ede416f 100644
 --- a/Utilities/CMakeLists.txt
 +++ b/Utilities/CMakeLists.txt
 @@ -69,6 +69,7 @@ if(NOT GDCM_USE_SYSTEM_ZLIB)
@@ -19,10 +52,25 @@ index 4cdc999..c6ede41 100644
  # you could be running mingw32 on linux in which case you do NOT want the gdcmuuid lib
  APPEND_COPYRIGHT(${CMAKE_CURRENT_SOURCE_DIR}/gdcmuuid/COPYING)
 diff --git a/Utilities/VTK/Applications/CMakeLists.txt b/Utilities/VTK/Applications/CMakeLists.txt
-index a7f7e7e..ab89a73 100644
+index a7f7e7e6e..20274f519 100644
 --- a/Utilities/VTK/Applications/CMakeLists.txt
 +++ b/Utilities/VTK/Applications/CMakeLists.txt
-@@ -60,7 +60,12 @@ foreach(app ${GDCM_VTK_APPS})
+@@ -5,9 +5,11 @@ include_directories(
+   )
+ 
+ if(WIN32 AND NOT CYGWIN)
+-  include_directories(
+-    "${GDCM_SOURCE_DIR}/Utilities/getopt"
+-  )
++  if(NOT USE_VCPKG_GETOPT)
++    include_directories(
++      "${GDCM_SOURCE_DIR}/Utilities/getopt"
++    )
++  endif()
+ endif()
+ if(WIN32)
+   if (BUILD_SHARED_LIBS)
+@@ -60,7 +62,12 @@ foreach(app ${GDCM_VTK_APPS})
      endif()
    endif()
    if(WIN32 AND NOT CYGWIN)

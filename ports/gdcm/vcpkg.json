@@ -11,6 +11,7 @@
       "name": "getopt",
       "platform": "windows & !mingw"
     },
+    "libiconv",
     "openjpeg",
     {
       "name": "vcpkg-cmake",
