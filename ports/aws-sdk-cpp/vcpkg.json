@@ -15,11 +15,11 @@
       "features": [
         "ssl"
       ],
-      "platform": "!uwp & !windows"
+      "platform": "!uwp"
     },
     {
       "name": "openssl",
-      "platform": "!uwp & !windows"
+      "platform": "!uwp"
     },
     {
       "name": "vcpkg-cmake",
