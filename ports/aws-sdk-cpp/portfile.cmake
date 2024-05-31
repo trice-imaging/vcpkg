@@ -45,6 +45,7 @@ vcpkg_cmake_configure(
         "-DAWS_SDK_WARNINGS_ARE_ERRORS=OFF"
         "-DCMAKE_INSTALL_RPATH=${rpath}"
         "-DCMAKE_MODULE_PATH=${CURRENT_INSTALLED_DIR}/share/aws-c-common" # use extra cmake files
+        "-DFORCE_CURL=ON" # TRICE - use curl on all platforms
 )
 vcpkg_cmake_install()
 
