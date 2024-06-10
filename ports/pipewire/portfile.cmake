@@ -2,8 +2,8 @@ vcpkg_from_gitlab(
     GITLAB_URL https://gitlab.freedesktop.org/
     OUT_SOURCE_PATH SOURCE_PATH
     REPO pipewire/pipewire
-    REF 0.3.52
-    SHA512 30e9cf74c92babafe386f02a03bb5c41a8ee5591a02f15845cca1ee44f091ce68eb14d48943d43b680cb525026a19e0290997670f9a82156eaa72e974fe6d01a
+    REF "${VERSION}"
+    SHA512 4ef85f17b0364fe1ef994bf58fe9232fb201002b9fd6644542f58f91595cca48dc70a6a17b50713809c618998626b18e7f1436a090fea826a80b41df9418e2bf
     HEAD_REF master # branch name
 )
 
@@ -11,7 +11,7 @@ vcpkg_configure_meson(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS
         -Dalsa=disabled
-        -Daudioconvert=disabled
+        -Daudioconvert=enabled
         -Daudiomixer=disabled
         -Daudiotestsrc=disabled
         -Davahi=disabled
@@ -75,7 +75,7 @@ vcpkg_install_meson()
 vcpkg_copy_pdbs()
 vcpkg_fixup_pkgconfig()
 
-file(INSTALL "${SOURCE_PATH}/COPYING" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)
+vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYING")
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")
 
 if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")

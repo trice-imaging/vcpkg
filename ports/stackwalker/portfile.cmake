@@ -1,25 +1,28 @@
+vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
+
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO JochenKalmbach/StackWalker
-    REF 53320512bd2fe1097b85e38262191d7c55210990
-    SHA512 06ee02855c2f0f0d5176f2edc95f704b7ab721a80e26cdb5cc037f7abb98bcd2318ffe23934ad2f1289e69d5a835eb24c496e2e1cecccd442ed107ab4fda28fc
+    REF "${VERSION}"
+    SHA512 6fe8c5eb6e2d94630d43644a13cf62f1725a9f39115bda2d859461ad0cc6acf27e8a246247bd9b49940fb4ec372559f6d11467e77215d3638f910f2574ac449a
     HEAD_REF master
     PATCHES
-		${CMAKE_CURRENT_LIST_DIR}/install.patch
+        fix-exports.patch
 )
 
 vcpkg_cmake_configure(
-    SOURCE_PATH ${SOURCE_PATH}
-    PREFER_NINJA
+    SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS
-        -DStackWalker_DISABLE_TESTS=ON
+        ${options}
+        -DStackWalker_DISABLE_TESTS=OFF
 )
 
 vcpkg_cmake_install()
+
 vcpkg_copy_pdbs()
-vcpkg_cmake_config_fixup(CONFIG_PATH share/cmake/stackwalker)
+
+vcpkg_cmake_config_fixup()
 
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include")
 
-# Handle copyright
-file(INSTALL ${SOURCE_PATH}/LICENSE DESTINATION ${CURRENT_PACKAGES_DIR}/share/${PORT} RENAME copyright)
+vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/LICENSE")

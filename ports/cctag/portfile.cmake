@@ -7,6 +7,7 @@ vcpkg_from_github(
     PATCHES
         0001-fix-osx.patch
         0002-find-tbb.patch # Includes changes similar to https://github.com/alicevision/CCTag/pull/178/
+        fix-compatibility-with-boost-1.85.patch
 )
 
 file(REMOVE "${SOURCE_PATH}/cmake/FindTBB.cmake" "${SOURCE_PATH}/src/applications/cmake/FindTBB.cmake")
@@ -18,7 +19,6 @@ vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
 )
 
 if("cuda" IN_LIST FEATURES)
-    include("${CURRENT_INSTALLED_DIR}/share/cuda/vcpkg_find_cuda.cmake")
     vcpkg_find_cuda(OUT_CUDA_TOOLKIT_ROOT CUDA_TOOLKIT_ROOT)
     message(STATUS "CUDA_TOOLKIT_ROOT ${CUDA_TOOLKIT_ROOT}")
 endif()

@@ -1,8 +1,11 @@
+# header-only library
+vcpkg_minimum_required(VERSION 2022-10-12) # for ${VERSION}
+
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO danielaparker/jsoncons
-    REF dff2d7d64ca03de27e79347d6473483f95c066d3 # v0.168.7
-    SHA512 e388dbc5f9ee0f8fc36bda46f9a68210c2467a8e3f91ae6b57b0e0bc78b732287cb3e36ffa5ee5147f434deeabf3ea4456897a89b868befeb757df88297ec002
+    REF v${VERSION}
+    SHA512 a7876a4dc9242efc84658d12b40836708f411665ce836aaf2ec282a3d4761e1d04af729e110c1b1682ccf7120a463d5fa3ac0236e700462eda3e300f9099725d
     HEAD_REF master
 )
 
@@ -18,4 +21,5 @@ vcpkg_fixup_pkgconfig()
 
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug")
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/lib")
-file(INSTALL "${SOURCE_PATH}/LICENSE" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)
+
+vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/LICENSE")
