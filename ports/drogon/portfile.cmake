@@ -1,13 +1,21 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO an-tao/drogon
-    REF v1.8.1
-    SHA512 ee7303350fd2b6d7a6ad283d0edcc5a7e6ef289652e3393699d9c4101308681f0124ebff6225de1665e86d2e2cf4c3192a17e70a204268e40d935acd097324a3
+    REF "v${VERSION}"
+    SHA512 0c58ed45aacbfd1916bbd9c52ecbd203abdc1032c7d6f908750a188443e293d749705d35c2b56eab54e30f36cc606b2437889e11a482ebda34d36035e8221499
     HEAD_REF master
     PATCHES
-        vcpkg.patch
-        drogon_config.patch
+         0001-vcpkg.patch
+         0002-drogon-config.patch
+         0003-deps-redis.patch
+         0004-drogon-ctl.patch
+         0005-drogon-cross-compile.patch
 )
+
+set(DROGON_CTL_TOOL "")
+if(VCPKG_CROSSCOMPILING)
+    set(DROGON_CTL_TOOL "${CURRENT_HOST_INSTALLED_DIR}/tools/drogon/drogon_ctl${VCPKG_HOST_EXECUTABLE_SUFFIX}")
+endif()
 
 vcpkg_check_features(
     OUT_FEATURE_OPTIONS FEATURE_OPTIONS
@@ -19,6 +27,7 @@ vcpkg_check_features(
         postgres LIBPQ_BATCH_MODE
         redis    BUILD_REDIS
         sqlite3  BUILD_SQLITE
+        yaml     BUILD_YAML_CONFIG
 )
 
 string(COMPARE EQUAL "${VCPKG_LIBRARY_LINKAGE}" "dynamic" BUILD_DROGON_SHARED)
@@ -30,6 +39,8 @@ vcpkg_cmake_configure(
         -DBUILD_SHARED_LIBS=${BUILD_DROGON_SHARED}
         -DBUILD_EXAMPLES=OFF
         -DCMAKE_DISABLE_FIND_PACKAGE_Boost=ON
+        -DUSE_SUBMODULE=OFF
+        "-DDROGON_CTL_TOOL=${DROGON_CTL_TOOL}"
         ${FEATURE_OPTIONS}
     MAYBE_UNUSED_VARIABLES
         CMAKE_DISABLE_FIND_PACKAGE_Boost

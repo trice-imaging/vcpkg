@@ -1,14 +1,13 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO OSGeo/PROJ
-    REF 9.1.0
-    SHA512 0a0c887e14dc4dddc8ea3d1de01683cd81d9d6cc5788601aa224e1fecf46af10fb289e7260547431b35e4b771b020feccf04101135b86c6343221c8f446a766b
+    REF "${VERSION}"
+    SHA512 5bc53723a81d9950599d6c47a837de5e9052aa56f943951e3ad0911cbeb71585bac648f37b9b626f32bb5d0b481ce5aef9be0833910e53b4b015b573808b8981
     HEAD_REF master
     PATCHES
         fix-win-output-name.patch
         fix-proj4-targets-cmake.patch
-        tools-cmake.patch
-        remove-doc.patch
+        remove_toolset_restriction.patch
 )
 
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
@@ -32,9 +31,10 @@ vcpkg_cmake_configure(
     OPTIONS
         ${FEATURE_OPTIONS}
         -DNLOHMANN_JSON=external
-        -DPROJ_DATA_SUBDIR=share/${PORT}/data
         -DBUILD_TESTING=OFF
         "-DEXE_SQLITE3=${EXE_SQLITE3}"
+    OPTIONS_DEBUG
+        -DBUILD_APPS=OFF
 )
 
 vcpkg_cmake_install()
@@ -54,8 +54,12 @@ if ("tools" IN_LIST FEATURES)
     vcpkg_copy_tools(TOOL_NAMES ${TOOL_NAMES} AUTO_CLEAN)
 endif ()
 
-file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include")
-file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")
+file(REMOVE_RECURSE
+    "${CURRENT_PACKAGES_DIR}/debug/include"
+    "${CURRENT_PACKAGES_DIR}/debug/share"
+    "${CURRENT_PACKAGES_DIR}/share/doc"
+    "${CURRENT_PACKAGES_DIR}/share/man"
+)
 
 vcpkg_copy_pdbs()
 

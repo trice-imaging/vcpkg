@@ -1,8 +1,10 @@
+vcpkg_minimum_required(VERSION 2022-10-12) # for ${VERSION}
+
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO libharu/libharu
-    REF 0eb5cdc5a7b5f2b03de20de7a0a57921f56b59f3 # 2.4.2
-    SHA512 f6be210b09eee348d5de87a0e6edbab360091db121baa21d9e1b3c45fb4dda4f6351353605cc247fc375e0daf2f05b576a73244110e44cfb02798b3f3d1836db
+    REF v${VERSION}
+    SHA512 422210b09f89643cb25808559aeea109db5cce8a71c779d51f87222cdd50434f4f0f92322ebe429fca8f85ad73592bcabb14c3e36cd0bea19b6ec4c729220522
     HEAD_REF master
     PATCHES
         fix-include-path.patch
@@ -39,21 +41,24 @@ file(REMOVE_RECURSE
 )
 
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")
-file(READ "${CURRENT_PACKAGES_DIR}/include/hpdf.h" _contents)
-if(VCPKG_LIBRARY_LINKAGE STREQUAL "dynamic")
-    string(REPLACE "#ifdef HPDF_DLL\n" "#if 1\n" _contents "${_contents}")
-else()
-    string(REPLACE "#ifdef HPDF_DLL\n" "#if 0\n" _contents "${_contents}")
-endif()
-file(WRITE "${CURRENT_PACKAGES_DIR}/include/hpdf.h" "${_contents}")
 
-file(READ "${CURRENT_PACKAGES_DIR}/include/hpdf_types.h" _contents)
-if(VCPKG_LIBRARY_LINKAGE STREQUAL "dynamic")
-    string(REPLACE "#ifdef HPDF_DLL\n" "#if 1\n" _contents "${_contents}")
-else()
-    string(REPLACE "#ifdef HPDF_DLL\n" "#if 0\n" _contents "${_contents}")
+if(VCPKG_TARGET_IS_WINDOWS)
+    file(READ "${CURRENT_PACKAGES_DIR}/include/hpdf.h" _contents)
+    if(VCPKG_LIBRARY_LINKAGE STREQUAL "dynamic")
+        string(REPLACE "#ifdef HPDF_DLL\n" "#if 1\n" _contents "${_contents}")
+    else()
+        string(REPLACE "#ifdef HPDF_DLL\n" "#if 0\n" _contents "${_contents}")
+    endif()
+    file(WRITE "${CURRENT_PACKAGES_DIR}/include/hpdf.h" "${_contents}")
+    
+    file(READ "${CURRENT_PACKAGES_DIR}/include/hpdf_types.h" _contents)
+    if(VCPKG_LIBRARY_LINKAGE STREQUAL "dynamic")
+        string(REPLACE "#ifdef HPDF_DLL\n" "#if 1\n" _contents "${_contents}")
+    else()
+        string(REPLACE "#ifdef HPDF_DLL\n" "#if 0\n" _contents "${_contents}")
+    endif()
+    file(WRITE "${CURRENT_PACKAGES_DIR}/include/hpdf_types.h" "${_contents}")
 endif()
-file(WRITE "${CURRENT_PACKAGES_DIR}/include/hpdf_types.h" "${_contents}")
 
 vcpkg_copy_pdbs()
 file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
