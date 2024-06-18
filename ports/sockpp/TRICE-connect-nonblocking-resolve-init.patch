@@ -138,3 +138,16 @@ index 6e04103..160d4dc 100644
  }
  
  // --------------------------------------------------------------------------
+diff --git a/src/socket.cpp b/src/socket.cpp
+index e4d8d76..ff32090 100644
+--- a/src/socket.cpp
++++ b/src/socket.cpp
+@@ -306,7 +306,7 @@ std::string socket::error_str(int err)
+ bool socket::shutdown(int how /*=SHUT_RDWR*/)
+ {
+ 	if(handle_ != INVALID_SOCKET) {
+-		return check_ret_bool(::shutdown(release(), how));
++		return check_ret_bool(::shutdown(handle_, how));
+ 	}
+ 
+ 	return false;
