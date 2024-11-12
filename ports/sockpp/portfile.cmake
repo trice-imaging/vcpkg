@@ -10,7 +10,7 @@ vcpkg_from_github(
         TRICE-connect-nonblocking-resolve-init.patch
 )
 
-vcpkg_replace_string("${SOURCE_PATH}/CMakeLists.txt" "\${SOCKPP}-static" "\${SOCKPP}")
+vcpkg_replace_string("${SOURCE_PATH}/CMakeLists.txt" "\${SOCKPP}-static" "\${SOCKPP}" IGNORE_UNCHANGED)
 
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
