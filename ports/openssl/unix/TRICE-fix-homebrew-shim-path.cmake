@@ -1,0 +1,5 @@
+set(MAKEFILE "${DIR}/Makefile")
+message("Fixing homebrew shim CC appearing in ${MAKEFILE}")
+file(READ "${MAKEFILE}" _contents)
+string(REPLACE "mkbuildinf.pl \"$(CC) " "mkbuildinf.pl \"`basename $(CC)` " _contents "${_contents}")
+file(WRITE "${MAKEFILE}" "${_contents}")

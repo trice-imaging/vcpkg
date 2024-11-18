@@ -247,6 +247,14 @@ add_custom_command(
         APPEND
 )
 
+# TRICE fix for homebrew shim CC appearing in library.
+add_custom_command(
+        OUTPUT "${BUILDDIR}/Makefile"
+        COMMAND "${CMAKE_COMMAND}" "-DDIR=${BUILDDIR}" -P "${CMAKE_CURRENT_LIST_DIR}/TRICE-fix-homebrew-shim-path.cmake"
+        VERBATIM
+        APPEND
+)
+
 if((CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS") AND BUILD_SHARED_LIBS)
     if(DEFINED CMAKE_INSTALL_NAME_DIR)
         set(ID_PREFIX "${CMAKE_INSTALL_NAME_DIR}")
