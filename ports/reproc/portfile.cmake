@@ -4,6 +4,8 @@ vcpkg_from_github(
     REF "v${VERSION}"
     SHA512 d6c8abfc4fbef894310f4ad6250ddf269279bce13954ba6bc0147e0bf7e08f5a5e924ba079205881d6bf1dfe865e5f4389517d6d3bbafdede24ed328c549a991
     HEAD_REF main
+    PATCHES
+        TRICE-fix-nonblocking.patch
 )
 
 vcpkg_cmake_configure(
