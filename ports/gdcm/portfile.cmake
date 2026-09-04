@@ -24,6 +24,7 @@ vcpkg_cmake_configure(
         -DGDCM_USE_SYSTEM_EXPAT=ON
         -DGDCM_USE_SYSTEM_OPENJPEG=ON
         -DGDCM_USE_SYSTEM_ZLIB=ON
+        -DGDCM_BUILD_APPLICATIONS=ON
 )
 
 vcpkg_cmake_install()
@@ -34,5 +35,7 @@ file(REMOVE_RECURSE
     "${CURRENT_PACKAGES_DIR}/debug/include"
     "${CURRENT_PACKAGES_DIR}/debug/share"
 )
+
+vcpkg_copy_tools(TOOL_NAMES gdcmconv AUTO_CLEAN)
 
 vcpkg_install_copyright(FILE_LIST "${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel/Copyright.txt")
