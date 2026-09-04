@@ -1,42 +1,93 @@
-vcpkg_minimum_required(VERSION 2022-10-12) # for ${VERSION}
 if(EXISTS "${CURRENT_INSTALLED_DIR}/share/libressl/copyright"
     OR EXISTS "${CURRENT_INSTALLED_DIR}/share/boringssl/copyright")
     message(FATAL_ERROR "Can't build openssl if libressl/boringssl is installed. Please remove libressl/boringssl, and try install openssl again if you need it.")
 endif()
 
-if (VCPKG_TARGET_IS_LINUX)
-    message(WARNING
-[[openssl currently requires the following library from the system package manager:
-    linux-headers
-It can be installed on alpine systems via apk add linux-headers.]]
-    )
-endif()
-
-if (VCPKG_TARGET_IS_WINDOWS AND NOT VCPKG_TARGET_IS_UWP)
-    set(OPENSSL_PATCHES "${CMAKE_CURRENT_LIST_DIR}/windows/flags.patch")
+if(VCPKG_TARGET_IS_EMSCRIPTEN)
+    vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 endif()
 
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO openssl/openssl
-    REF openssl-${VERSION}
-    SHA512 ebd70c82ef2b8d882858e26333c27b8975e55cc8a350b646c24505cd6feba1e92d4894026ec6b0cefe6d7dcbedb5799bd72df4114c832efb2616b68ad303f5d1
-    PATCHES ${OPENSSL_PATCHES}
+    REF "openssl-${VERSION}"
+    SHA512 f67b9cbf0b47d25904f912e22d90e920eabd3f346c136c38b21dab8a0a1d61eaff593b75ceb519c95d464116487ea4e4db83535db5a666ea2c6612e8310e5d0a
+    PATCHES
+        cmake-config.patch
+        command-line-length.patch
+        script-prefix.patch
+        windows/install-layout.patch
+        windows/install-pdbs.patch
+        windows/install-programs.diff # https://github.com/openssl/openssl/issues/28744
+        unix/android-cc.patch
+        unix/move-openssldir.patch
+        unix/no-empty-dirs.patch
+        unix/no-static-libs-for-shared.patch
 )
 
-vcpkg_find_acquire_program(PERL)
-get_filename_component(PERL_EXE_PATH ${PERL} DIRECTORY)
-vcpkg_add_to_path("${PERL_EXE_PATH}")
+vcpkg_list(SET CONFIGURE_OPTIONS
+    enable-static-engine
+    enable-capieng
+    no-tests
+    no-docs
+)
 
-if(VCPKG_TARGET_IS_UWP)
-    include("${CMAKE_CURRENT_LIST_DIR}/uwp/portfile.cmake")
-    include("${CMAKE_CURRENT_LIST_DIR}/install-pc-files.cmake")
-elseif(VCPKG_TARGET_IS_WINDOWS AND NOT VCPKG_TARGET_IS_MINGW)
+# https://github.com/openssl/openssl/blob/master/INSTALL.md#enable-ec_nistp_64_gcc_128
+vcpkg_cmake_get_vars(cmake_vars_file)
+include("${cmake_vars_file}")
+if(VCPKG_DETECTED_CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$"
+   AND VCPKG_TARGET_ARCHITECTURE MATCHES "^(x64|arm64|riscv64|ppc64le)$")
+    vcpkg_list(APPEND CONFIGURE_OPTIONS enable-ec_nistp_64_gcc_128)
+endif()
+
+set(INSTALL_FIPS "")
+if("fips" IN_LIST FEATURES)
+    vcpkg_list(APPEND INSTALL_FIPS install_fips)
+    vcpkg_list(APPEND CONFIGURE_OPTIONS enable-fips)
+endif()
+
+if(VCPKG_LIBRARY_LINKAGE STREQUAL "dynamic")
+    vcpkg_list(APPEND CONFIGURE_OPTIONS shared)
+else()
+    vcpkg_list(APPEND CONFIGURE_OPTIONS no-shared no-module)
+endif()
+
+if(NOT "tools" IN_LIST FEATURES)
+    vcpkg_list(APPEND CONFIGURE_OPTIONS no-apps)
+endif()
+
+if("weak-ssl-ciphers" IN_LIST FEATURES)
+    vcpkg_list(APPEND CONFIGURE_OPTIONS enable-weak-ssl-ciphers)
+endif()
+
+if("ssl3" IN_LIST FEATURES)
+    vcpkg_list(APPEND CONFIGURE_OPTIONS enable-ssl3)
+    vcpkg_list(APPEND CONFIGURE_OPTIONS enable-ssl3-method)
+endif()
+
+if(DEFINED OPENSSL_USE_NOPINSHARED)
+    vcpkg_list(APPEND CONFIGURE_OPTIONS no-pinshared)
+endif()
+
+if(OPENSSL_NO_AUTOLOAD_CONFIG)
+    vcpkg_list(APPEND CONFIGURE_OPTIONS no-autoload-config)
+endif()
+
+if(VCPKG_TARGET_IS_WINDOWS AND NOT VCPKG_TARGET_IS_MINGW)
     include("${CMAKE_CURRENT_LIST_DIR}/windows/portfile.cmake")
     include("${CMAKE_CURRENT_LIST_DIR}/install-pc-files.cmake")
 else()
     include("${CMAKE_CURRENT_LIST_DIR}/unix/portfile.cmake")
 endif()
 
-configure_file("${CMAKE_CURRENT_LIST_DIR}/vcpkg-cmake-wrapper.cmake.in" "${CURRENT_PACKAGES_DIR}/share/${PORT}/vcpkg-cmake-wrapper.cmake" @ONLY)
 file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
+
+if (NOT "${VERSION}" MATCHES [[^([0-9]+)\.([0-9]+)\.([0-9]+)$]])
+    message(FATAL_ERROR "Version regex did not match.")
+endif()
+set(OPENSSL_VERSION_MAJOR "${CMAKE_MATCH_1}")
+set(OPENSSL_VERSION_MINOR "${CMAKE_MATCH_2}")
+set(OPENSSL_VERSION_FIX "${CMAKE_MATCH_3}")
+configure_file("${CMAKE_CURRENT_LIST_DIR}/vcpkg-cmake-wrapper.cmake.in" "${CURRENT_PACKAGES_DIR}/share/${PORT}/vcpkg-cmake-wrapper.cmake" @ONLY)
+
+vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/LICENSE.txt")

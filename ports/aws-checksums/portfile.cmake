@@ -2,8 +2,10 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO awslabs/aws-checksums
     REF "v${VERSION}"
-    SHA512 9327d7194d3be9ba55f6c30010961a7fb2c8d287853412a06f6fc0b76ce414994b68b4b6eae10d51f747227af062d55c76c49ceeecf079a33f13096be729f061
-    HEAD_REF master
+    SHA512 c77c62aaad6932ca5fe8baf3c01562f3144198d1133ebc8d1c9e124d7b6a0bc69800362a6913967c87cea734e8ceb4b756f29349036477b19b7e50f6ef387376
+    HEAD_REF main
+    PATCHES
+        fix-cmake-config.patch
 )
 
 if (VCPKG_CRT_LINKAGE STREQUAL static)
@@ -16,7 +18,7 @@ vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS
         -DSTATIC_CRT=${STATIC_CRT_LNK}
-        "-DCMAKE_MODULE_PATH=${CURRENT_INSTALLED_DIR}/share/aws-c-common" # use extra cmake files
+        "-DCMAKE_PREFIX_PATH=${CURRENT_INSTALLED_DIR}/share/aws-c-common/modules" # use extra cmake files
         -DBUILD_TESTING=FALSE
 )
 
@@ -36,4 +38,8 @@ file(REMOVE_RECURSE
 
 vcpkg_copy_pdbs()
 
-vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/LICENSE")
+vcpkg_install_copyright(
+    FILE_LIST
+        "${SOURCE_PATH}/LICENSE"
+        "${SOURCE_PATH}/source/external/xxhash.h"
+)

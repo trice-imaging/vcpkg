@@ -9,15 +9,6 @@ vcpkg_from_github(
 )
 
 file(INSTALL ${SOURCE_PATH}/source/jthread.hpp DESTINATION ${CURRENT_PACKAGES_DIR}/include)
-
-# Trice fixup
-set(STOP_TOKEN_FILE ${SOURCE_PATH}/source/stop_token.hpp)
-message("Fixing std namespace ambiguity in ${STOP_TOKEN_FILE}")
-file(READ "${STOP_TOKEN_FILE}" _contents)
-string(REPLACE "__stop_callback_base" "__trice__stop_callback_base" _contents "${_contents}")
-string(REPLACE "__stop_state" "__trice__stop_state" _contents "${_contents}")
-file(WRITE "${STOP_TOKEN_FILE}" "${_contents}")
-
 file(INSTALL ${SOURCE_PATH}/source/stop_token.hpp DESTINATION ${CURRENT_PACKAGES_DIR}/include)
 file(INSTALL ${SOURCE_PATH}/source/condition_variable_any2.hpp DESTINATION ${CURRENT_PACKAGES_DIR}/include)
 

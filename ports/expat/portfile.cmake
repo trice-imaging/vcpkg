@@ -4,9 +4,12 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO libexpat/libexpat
     REF "${REF}"
-    SHA512 ea5452c511e18e0eb927eab46a47c7ced1b1be3b46232a38caef39aa86fd552a72f066db66ca824ade3ff2376b70ca72ca91bdf1d003770c91a38a47e8781b8f
+    SHA512 547fe1a3183f75edd23e925ab4151ef7a3afa5f65329784456374d733d54f04e744257239868d4a6c1a21e17edcc3c1eced7b1ed9885cec42006444323fd47e5
     HEAD_REF master
 )
+
+# Avoid conflicting utf-8 flags for MSVC
+vcpkg_replace_string("${SOURCE_PATH}/expat/CMakeLists.txt" "/source-charset:utf-8" "")
 
 string(COMPARE EQUAL "${VCPKG_LIBRARY_LINKAGE}" "dynamic" EXPAT_LINKAGE)
 string(COMPARE EQUAL "${VCPKG_CRT_LINKAGE}" "static" EXPAT_CRT_LINKAGE)
@@ -34,7 +37,7 @@ file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include")
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/share/doc")
 
-vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/include/expat_external.h" "defined(_MSC_EXTENSIONS)" "defined(_WIN32)")
+vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/include/expat_external.h" "defined(_MSC_VER)" "defined(_WIN32)")
 if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
     vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/include/expat_external.h" "! defined(XML_STATIC)" "0")
 endif()

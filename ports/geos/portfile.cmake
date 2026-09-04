@@ -1,13 +1,20 @@
+vcpkg_download_distfile(PR1453
+    URLS "https://github.com/libgeos/geos/commit/4226b5a034d249e64385d3dac7e69774ff30d6f3.patch?full_index=1"
+    FILENAME "geos-pr-1453.patch"
+    SHA512 31a24f6feff44af2cb4b923845e4496ca77d78dbe18a170c4deaae8973581c5e8c5430e033b63c2cda3ee8926d1e31007625fbace22b87fd5cde3bd43bd3caaf
+)
+
 vcpkg_download_distfile(ARCHIVE
     URLS "https://download.osgeo.org/geos/geos-${VERSION}.tar.bz2"
     FILENAME "geos-${VERSION}.tar.bz2"
-    SHA512 38a6d8bb05b374160c6e5eb82e5f601915ee44e75bdba0414bb7b1096a62f3cdfbb877389998bd3ff4c77c98927ce95a8d8298dd599a0fcb8ea0e83f174f1744
+    SHA512 a5a27c34249a6b7fa8bc5d6d557f278bcc3a81ca188f9f543bee7afb6e47d9f8a545e676c5884c0651530bccd24eb929feaaf95cda8e73b033296073e6626f0d
 )
 vcpkg_extract_source_archive(SOURCE_PATH
     ARCHIVE "${ARCHIVE}"
     SOURCE_BASE "v${VERSION}"
     PATCHES
         fix-exported-config.patch
+        "${PR1453}"
 )
 
 vcpkg_cmake_configure(

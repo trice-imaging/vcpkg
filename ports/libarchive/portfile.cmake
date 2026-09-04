@@ -2,7 +2,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO libarchive/libarchive
     REF "v${VERSION}"
-    SHA512 284da172cd5aef6a321f88a35ecd1f0400b885fea33d7c84139faa9ba67487b2673cbb244914f95c22b6c7e7cbfce773da4536c975844c8a156d6b4b3e58193f
+    SHA512 d3ef539a45b0b1bcc4f9012ffe70b78ae2a1852bef7af515e0bb0bd88353a1c70e6db38ab855ca9f5f9420d4b4072e51e36d69bf656bbf9342122ef845a67f94
     HEAD_REF master
     PATCHES
         fix-buildsystem.patch
@@ -53,6 +53,14 @@ else()
     )
 endif()
 
+# archive_random.c and archive_util.c always call BCrypt* on Windows, bcrypt must be linked.
+# ref. https://github.com/libarchive/libarchive/issues/3375
+if(VCPKG_TARGET_IS_WINDOWS)
+    set(ENABLE_CNG ON)
+else()
+    set(ENABLE_CNG OFF)
+endif()
+
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS
@@ -65,7 +73,7 @@ vcpkg_cmake_configure(
         -DENABLE_NETTLE=OFF
         -DENABLE_EXPAT=OFF
         -DENABLE_LibGCC=OFF
-        -DENABLE_CNG=OFF
+        -DENABLE_CNG=${ENABLE_CNG}
         -DENABLE_UNZIP=OFF
         -DENABLE_TAR=OFF
         -DENABLE_CPIO=OFF

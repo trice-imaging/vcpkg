@@ -8,27 +8,23 @@ if("tao" IN_LIST FEATURES)
     vcpkg_download_distfile(ARCHIVE
         URLS "https://github.com/DOCGroup/ACE_TAO/releases/download/ACE%2BTAO-${VERSION_DIRECTORY}/ACE%2BTAO-src-${VERSION}.tar.gz"
         FILENAME "ACE-TAO-src-${VERSION}.tar.gz"
-        SHA512 7ca16de48c669d113a25975be132eb358527de0b51b45dea665c609e3a37d39ac3aac07e816d3ded9cdcd6895d84417bf1d3db36c4e977fc36af53ec333f5d32
-    )
-    vcpkg_extract_source_archive(
-        SOURCE_PATH
-        ARCHIVE "${ARCHIVE}"
-        PATCHES
-            p2453.patch
+        SHA512 b2fa92611742a5752e36e9a7af6c8e44b4c7aa9dd5aa145cb08cf60f9bb7c2b04c52017c1b5870bc01d293afa8c33f8cf7ad21698178900cf22283ff25f052c4
     )
 else()
     # Don't change to vcpkg_from_github! This points to a release and not an archive
     vcpkg_download_distfile(ARCHIVE
         URLS "https://github.com/DOCGroup/ACE_TAO/releases/download/ACE%2BTAO-${VERSION_DIRECTORY}/ACE-src-${VERSION}.tar.gz"
         FILENAME "ACE-src-${VERSION}.tar.gz"
-        SHA512 0126b90b77c0b92f3a995bb4c9eb61ddc1c551c4ed078567f421dc3703f2427aff5445fcaa70d6cd690d61065fa4855dc865eda4297b64ce06b5c5cbb26968f8
-    )
-    vcpkg_extract_source_archive(
-        SOURCE_PATH
-        ARCHIVE "${ARCHIVE}"
+        SHA512 82d248887280848f1839a9808f7015afa0c354ff096bfaa411e14de4ef657a0193a3f4be85a67a72e0b5b461eaddc8605d9953bbcd75bbbc564beafe0935a530
     )
 endif()
 
+vcpkg_extract_source_archive(
+    SOURCE_PATH
+    ARCHIVE "${ARCHIVE}"
+    PATCHES
+        zlib.patch
+)
 
 set(ACE_ROOT "${SOURCE_PATH}")
 set(ENV{ACE_ROOT} "${ACE_ROOT}")
@@ -134,6 +130,7 @@ if(VCPKG_TARGET_IS_WINDOWS)
   vcpkg_msbuild_install(
     SOURCE_PATH "${SOURCE_PATH}"
     PROJECT_SUBPATH "${PROJECT_SUBPATH}"
+    OPTIONS "/p:UseMultiToolTask=false" # tao_idl uses static temp file buffers; parallel custom builds cause mkstemp name collisions on Windows
   )
 
   # ACE itself does not define an install target, so it is not clear which
