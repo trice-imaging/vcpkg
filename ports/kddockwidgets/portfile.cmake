@@ -1,11 +1,23 @@
+if("qtwidgets" IN_LIST FEATURES)
+    list(APPEND FRONTEND_LIST "qtwidgets")
+endif()
+
+if("qtquick" IN_LIST FEATURES)
+    list(APPEND FRONTEND_LIST "qtquick")
+endif()
+
+if(FRONTEND_LIST)
+    list(JOIN FRONTEND_LIST ";" FRONTENDS)
+else()
+    message(FATAL_ERROR "No front-ends selected for ${PORT}, cannot build package")
+endif()
+
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO KDAB/KDDockWidgets
-    REF "v${VERSION}" 
-    SHA512 7b88f354e2aca4ac4c0f59874b6a7d6baaf77f5b54dd57b981ec7831e40acc0e2f6d3c6300af3d93c594bf34c7072c6a8a19a50c65039ccae22a9e47b90499d8
-    HEAD_REF master
-    PATCHES
-        dependencies.diff
+    REF "v${VERSION}"
+    SHA512 578b7809e6b080be64c8b0b5e0aa1a68dca8118825cfd900a1edf1b179f30a939f8931729a529df65b56cc7a4cf1c59241ea806b87f880101bd74a40f0487f53
+    HEAD_REF main
 )
 file(REMOVE_RECURSE
     "${SOURCE_PATH}/src/3rdparty"
@@ -25,7 +37,7 @@ vcpkg_cmake_configure(
     OPTIONS
         ${_qarg_OPTIONS}
         -DKDDockWidgets_QT6=ON
-        -DKDDockWidgets_FRONTENDS=qtwidgets
+        "-DKDDockWidgets_FRONTENDS=${FRONTENDS}"
         -DKDDockWidgets_STATIC=${KD_STATIC}
         -DKDDockWidgets_PYTHON_BINDINGS=OFF
         -DKDDockWidgets_TESTS=OFF
@@ -43,8 +55,10 @@ if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
     file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/bin" "${CURRENT_PACKAGES_DIR}/debug/bin")
 endif()
 
-file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include")
-file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")
+file(REMOVE_RECURSE
+    "${CURRENT_PACKAGES_DIR}/debug/include"
+    "${CURRENT_PACKAGES_DIR}/debug/share"
+)
 
 vcpkg_install_copyright(FILE_LIST
     "${SOURCE_PATH}/LICENSE.txt"

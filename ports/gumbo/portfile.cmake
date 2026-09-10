@@ -3,7 +3,9 @@ vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 vcpkg_download_distfile(ARCHIVE
     URLS "https://codeberg.org/gumbo-parser/gumbo-parser/archive/${VERSION}.tar.gz"
     FILENAME "gumbo-${VERSION}.tar.gz"
-    SHA512  15da29bc1b7d70a827870562462ca90fd57469d72d7a4804c59da96c5c46b3a0c50e99a08a80d6e08d2be87f55388c8848918bfbab58ac0c22df85fdc2bd35e7
+    # Codeberg re-packs the same tag without changing the version string; refresh
+    # the hash when download fails with "hash mismatch" (observed 2026-08-02).
+    SHA512 612b570bfa4029272bc4b8d4ff43f6023e03a2a2ac6ba299fa6d0818dc112df84ef98908ef9102801dbf847e93cc6e1f8c976e2f9f782199d6785cb28db8dbb5
 )
 
 vcpkg_extract_source_archive(
