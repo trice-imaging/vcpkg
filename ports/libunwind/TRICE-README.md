@@ -1,0 +1,1 @@
+We configure `libunwind` with `--disable-cxx-exceptions` to avoid runtime conflicts between libgcc_s C++ exception handling and libunwind. In particular, we would see crashes due to the `_Unwind_Resume` symbol being resolved to libunwind.so at runtime.

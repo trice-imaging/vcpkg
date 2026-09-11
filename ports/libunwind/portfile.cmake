@@ -18,6 +18,8 @@ vcpkg_make_configure(
         --disable-tests
         --disable-zlibdebuginfo
         --enable-minidebuginfo
+        # Pass additional flag for Trice's purposes
+        --disable-cxx-exceptions
 )
 vcpkg_make_install()
 vcpkg_fixup_pkgconfig()
