@@ -12,6 +12,7 @@ vcpkg_from_github(
         pkgconfig-lib-order.diff
         msvc.diff
         emscripten-ofwhere.diff
+        TRICE.json-reader-buffer.patch
 )
 
 file(REMOVE
