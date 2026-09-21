@@ -1,0 +1,229 @@
+diff --git a/dcmdata/include/dcmtk/dcmdata/dcjsonrd.h b/dcmdata/include/dcmtk/dcmdata/dcjsonrd.h
+index 85c125a..bb964da 100644
+--- a/dcmdata/include/dcmtk/dcmdata/dcjsonrd.h
++++ b/dcmdata/include/dcmtk/dcmdata/dcjsonrd.h
+@@ -111,6 +111,19 @@ public:
+       DcmFileFormat& fileformat,
+       const char *ifname);
+ 
++  /** parse a JSON dataset from a memory buffer
++   *  The input is copied into an internal buffer and is not modified.
++   *  All reader policies also apply to this method.
++   *  @param fileformat DcmFileFormat instance to be populated with the parsed JSON content
++   *  @param data non-NULL pointer to the JSON data, need not be null terminated
++   *  @param length number of bytes in data, excluding any terminating null byte
++   *  @return EC_Normal upon success, an error code otherwise
++   */
++  OFCondition readAndConvertJSONBuffer(
++      DcmFileFormat& fileformat,
++      const char *data,
++      size_t length);
++
+   /** dump the token array produced by the JSMN parser to stderr
+    */
+   virtual OFCondition dumpJSONTokenArray();
+@@ -218,6 +231,12 @@ private:
+   /// list of directories to which file URIs may point
+   OFList<OFString> permittedBulkdataDirs_;
+ 
++  /** parse the internal JSON buffer and convert it to a DICOM dataset
++   *  @param fileformat DcmFileFormat instance to be populated with the parsed JSON content
++   *  @return EC_Normal upon success, an error code otherwise
++   */
++  OFCondition convertJSON(DcmFileFormat& fileformat);
++
+   /** calculate the required number of tokens for the JSON dataset
+    *  and allocate the token array accordingly
+    */
+diff --git a/dcmdata/libsrc/dcjsonrd.cc b/dcmdata/libsrc/dcjsonrd.cc
+index 064dc35..3791117 100644
+--- a/dcmdata/libsrc/dcjsonrd.cc
++++ b/dcmdata/libsrc/dcjsonrd.cc
+@@ -23,6 +23,7 @@
+ #include "dcmtk/dcmdata/dcjsonrd.h"
+ #include "dcmtk/ofstd/ofcond.h"         /* for class OFCondition */
+ #include "dcmtk/ofstd/offile.h"         /* for class OFFile */
++#include "dcmtk/ofstd/oflimits.h"       /* for OFnumeric_limits */
+ #include "dcmtk/dcmdata/dcerror.h"      /* for dcmdata logger macros */
+ #include "dcmtk/dcmdata/dcfilefo.h"     /* for class DcmFileFormat */
+ #include "dcmtk/dcmdata/dcmetinf.h"
+@@ -1184,8 +1185,6 @@ OFCondition DcmJSONReader::readAndConvertJSONFile(
+ {
+     // clear old buffers, in case this object is re-used
+     clear();
+-    DcmMetaInfo* metaheader = fileformat.getMetaInfo();
+-    DcmDataset* dataset = fileformat.getDataset();
+     OFCondition result;
+ 
+     // readin the input file to a memory buffer
+@@ -1195,6 +1194,37 @@ OFCondition DcmJSONReader::readAndConvertJSONFile(
+         else result = readJSONFile(ifname);
+     if (result.bad()) return result;
+ 
++    return convertJSON(fileformat);
++}
++
++
++OFCondition DcmJSONReader::readAndConvertJSONBuffer(
++    DcmFileFormat& fileformat,
++    const char *data,
++    size_t length)
++{
++    // Keep policy settings, but discard the previous input and tokens.
++    clear();
++    if ((data == NULL) || (length == OFnumeric_limits<size_t>::max()))
++        return EC_IllegalParameter;
++
++    // Parsing temporarily modifies the buffer when extracting token content.
++    jsonDataset_ = new (std::nothrow) char[length + 1];
++    if (jsonDataset_ == NULL) return EC_MemoryExhausted;
++    memcpy(jsonDataset_, data, length);
++    jsonDataset_[length] = '\0';
++    jsonDatasetLen_ = length;
++
++    return convertJSON(fileformat);
++}
++
++
++OFCondition DcmJSONReader::convertJSON(DcmFileFormat& fileformat)
++{
++    DcmMetaInfo* metaheader = fileformat.getMetaInfo();
++    DcmDataset* dataset = fileformat.getDataset();
++    OFCondition result;
++
+     // calculate tokens needed for the parser and allocate tokens
+     result = reserveTokens();
+     if (result.bad()) return result;
+diff --git a/dcmdata/tests/CMakeLists.txt b/dcmdata/tests/CMakeLists.txt
+index 98ea562..7ce6651 100644
+--- a/dcmdata/tests/CMakeLists.txt
++++ b/dcmdata/tests/CMakeLists.txt
+@@ -10,6 +10,7 @@ DCMTK_ADD_TEST_EXECUTABLE(dcmdata_tests
+   tgenuid.cc
+   ti2dbmp.cc
+   titem.cc
++  tjsonrd.cc
+   tmatch.cc
+   tnewdcme.cc
+   tparent.cc
+diff --git a/dcmdata/tests/Makefile.in b/dcmdata/tests/Makefile.in
+index 0331212..d89312d 100644
+--- a/dcmdata/tests/Makefile.in
++++ b/dcmdata/tests/Makefile.in
+@@ -26,7 +26,7 @@ LIBDCMXML = -ldcmxml
+ objs = tests.o tpread.o ti2dbmp.o tchval.o tpath.o tvrdatim.o telemlen.o tparser.o \
+ 	tdict.o tvrds.o tvrfd.o tvrui.o tvrol.o tvrov.o tvrsv.o tvruv.o tstrval.o \
+ 	tspchrs.o tvrpn.o tparent.o tfilter.o tvrcomp.o tmatch.o tnewdcme.o \
+-	tgenuid.o tsequen.o titem.o ttag.o txfer.o tbytestr.o tfrmsiz.o
++	tgenuid.o tsequen.o titem.o ttag.o txfer.o tbytestr.o tfrmsiz.o tjsonrd.o
+ 
+ progs = tests
+ 
+diff --git a/dcmdata/tests/tests.cc b/dcmdata/tests/tests.cc
+index c8b40d4..1d52462 100644
+--- a/dcmdata/tests/tests.cc
++++ b/dcmdata/tests/tests.cc
+@@ -127,5 +127,9 @@ OFTEST_REGISTER(dcmdata_xferLookup_3);
+ OFTEST_REGISTER(dcmdata_xferLookup_4);
+ OFTEST_REGISTER(dcmdata_putOFStringAtPos);
+ OFTEST_REGISTER(dcmdata_uncompressedFrameSize);
++OFTEST_REGISTER(dcmdata_jsonReader_buffer);
++OFTEST_REGISTER(dcmdata_jsonReader_fileAndBuffer);
++OFTEST_REGISTER(dcmdata_jsonReader_bufferReuse);
++OFTEST_REGISTER(dcmdata_jsonReader_invalidBuffer);
+ 
+ OFTEST_MAIN("dcmdata")
+diff --git a/dcmdata/tests/tjsonrd.cc b/dcmdata/tests/tjsonrd.cc
+new file mode 100644
+index 0000000..f08cc0b
+--- /dev/null
++++ b/dcmdata/tests/tjsonrd.cc
+@@ -0,0 +1,88 @@
++#include "dcmtk/config/osconfig.h"
++#include "dcmtk/dcmdata/dctk.h"
++#include "dcmtk/dcmdata/dcjsonrd.h"
++#include "dcmtk/ofstd/offile.h"
++#include "dcmtk/ofstd/oflimits.h"
++#include "dcmtk/ofstd/oftempf.h"
++#include "dcmtk/ofstd/oftest.h"
++
++static const char jsonDataset[] =
++    "{\"00100010\":{\"vr\":\"PN\",\"Value\":[{\"Alphabetic\":\"M\xc3\xbcller^Jane\"}]},"
++    "\"00400100\":{\"vr\":\"SQ\",\"Value\":[{\"00080060\":{\"vr\":\"CS\",\"Value\":[\"US\"]}}]},"
++    "\"00420011\":{\"vr\":\"OB\",\"InlineBinary\":\"AQIDBA==\"}}";
++
++OFTEST(dcmdata_jsonReader_buffer)
++{
++    DcmJSONReader reader;
++    DcmFileFormat fileformat;
++    // Read only the specified span, with no null terminator at its boundary.
++    const OFString input = OFString(jsonDataset) + "not JSON";
++    OFCHECK(reader.readAndConvertJSONBuffer(fileformat, input.data(), sizeof(jsonDataset) - 1).good());
++    OFCHECK_EQUAL(input, OFString(jsonDataset) + "not JSON");
++    OFString name;
++    OFCHECK(fileformat.getDataset()->findAndGetOFStringArray(DCM_PatientName, name).good());
++    OFCHECK_EQUAL(name, "M\xc3\xbcller^Jane");
++    DcmItem *step = NULL;
++    OFCHECK(fileformat.getDataset()->findAndGetSequenceItem(DCM_ScheduledProcedureStepSequence, step).good());
++    if (step)
++    {
++        OFString modality;
++        OFCHECK(step->findAndGetOFString(DCM_Modality, modality).good());
++        OFCHECK_EQUAL(modality, "US");
++    }
++    const Uint8 *bytes = NULL;
++    unsigned long count = 0;
++    OFCHECK(fileformat.getDataset()->findAndGetUint8Array(DCM_EncapsulatedDocument, bytes, &count).good());
++    OFCHECK_EQUAL(count, 4);
++    if (bytes && count == 4)
++        OFCHECK(memcmp(bytes, "\x01\x02\x03\x04", 4) == 0);
++}
++
++OFTEST(dcmdata_jsonReader_fileAndBuffer)
++{
++    OFTempFile tempfile;
++    OFCHECK(tempfile.getStatus().good());
++    OFFile output;
++    OFCHECK(output.fopen(tempfile.getFilename(), "wb"));
++    if (!output.open()) return;
++    OFCHECK_EQUAL(output.fwrite(jsonDataset, 1, sizeof(jsonDataset) - 1), sizeof(jsonDataset) - 1);
++    OFCHECK_EQUAL(output.fclose(), 0);
++
++    DcmJSONReader reader;
++    DcmFileFormat fromFile;
++    DcmFileFormat fromBuffer;
++    OFCHECK(reader.readAndConvertJSONFile(fromFile, tempfile.getFilename()).good());
++    OFCHECK(reader.readAndConvertJSONBuffer(fromBuffer, jsonDataset, sizeof(jsonDataset) - 1).good());
++    OFCHECK_EQUAL(fromFile.getDataset()->compare(*fromBuffer.getDataset()), 0);
++}
++
++OFTEST(dcmdata_jsonReader_bufferReuse)
++{
++    const char input[] = "[{\"00100020\":{\"vr\":\"LO\",\"Value\":[\"first\"]}},"
++                         "{\"00100020\":{\"vr\":\"LO\",\"Value\":[\"second\"]}}]";
++    DcmJSONReader reader;
++    DcmFileFormat rejected;
++    OFCHECK(reader.readAndConvertJSONBuffer(rejected, input, sizeof(input) - 1).bad());
++    reader.setArrayHandlingPolicy(2);
++    for (int i = 0; i < 2; ++i)
++    {
++        DcmFileFormat fileformat;
++        OFCHECK(reader.readAndConvertJSONBuffer(fileformat, input, sizeof(input) - 1).good());
++        OFString id;
++        OFCHECK(fileformat.getDataset()->findAndGetOFString(DCM_PatientID, id).good());
++        OFCHECK_EQUAL(id, "second");
++    }
++}
++
++OFTEST(dcmdata_jsonReader_invalidBuffer)
++{
++    DcmJSONReader reader;
++    DcmFileFormat fileformat;
++    OFCHECK(reader.readAndConvertJSONBuffer(fileformat, NULL, 0).bad());
++    OFCHECK(reader.readAndConvertJSONBuffer(fileformat, "", 0).bad());
++    OFCHECK(reader.readAndConvertJSONBuffer(fileformat, "", OFnumeric_limits<size_t>::max()).bad());
++    OFCHECK(reader.readAndConvertJSONBuffer(fileformat, "{", 1).bad());
++    const char invalid[] = "{\"00100020\":{\"vr\":\"LO\",\"Value\":\"not an array\"}}";
++    OFCHECK(reader.readAndConvertJSONBuffer(fileformat, invalid, sizeof(invalid) - 1).bad());
++    OFCHECK(reader.readAndConvertJSONBuffer(fileformat, jsonDataset, sizeof(jsonDataset) - 1).good());
++}
